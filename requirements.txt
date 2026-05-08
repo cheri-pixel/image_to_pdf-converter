@@ -5,3 +5,4 @@ gunicorn
 Pandas
 Openpyxl
 mysql-connector-python
+python-dotenv
