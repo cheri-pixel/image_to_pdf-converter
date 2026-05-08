@@ -6,6 +6,7 @@ import mysql.connector
 import pandas as pd
 import datetime
 import os
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
@@ -14,15 +15,15 @@ app = Flask(__name__)
 
 db_config = {
 
-    "host": "mysql://root:lycEQVnNfyiCgtphSKRPFygeNAjOFIqs@turntable.proxy.rlwy.net:44147/railway",
+    "host": os.getenv("MYSQLHOST"),
 
-    "user": "root",
+    "user": os.getenv("MYSQLUSER"),
 
-    "password": "lycEQVnNfyiCgtphSKRPFygeNAjOFIqs",
+    "password": os.getenv("MYSQLPASSWORD"),
 
-    "database": "railway",
+    "database": os.getenv("MYSQLDATABASE"),
 
-    "port": 3306
+    "port": int(os.getenv("MYSQLPORT"))
 
 }
 
