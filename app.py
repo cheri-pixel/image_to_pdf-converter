@@ -2,44 +2,63 @@ from flask import Flask, render_template, request, send_file
 from PIL import Image
 from PyPDF2 import PdfMerger
 from io import BytesIO
-import datetime
-import sqlite3
-import os
+import mysql.connector
 import pandas as pd
+import datetime
+import os
 
 app = Flask(__name__)
 
 
-# ---------------- DATABASE SETUP ----------------
+# ---------------- MYSQL DATABASE CONNECTION ----------------
+
+db_config = {
+
+    "host": "mysql://root:lycEQVnNfyiCgtphSKRPFygeNAjOFIqs@turntable.proxy.rlwy.net:44147/railway",
+
+    "user": "root",
+
+    "password": "lycEQVnNfyiCgtphSKRPFygeNAjOFIqs",
+
+    "database": "railway",
+
+    "port": 3306
+
+}
+
+
+# ---------------- CREATE DATABASE TABLE ----------------
 
 def init_db():
 
-    conn = sqlite3.connect('database.db')
+    db = mysql.connector.connect(**db_config)
 
-    cursor = conn.cursor()
+    cursor = db.cursor()
 
-    cursor.execute('''
+    cursor.execute("""
+
         CREATE TABLE IF NOT EXISTS analytics (
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INT AUTO_INCREMENT PRIMARY KEY,
 
-            tool TEXT,
+            tool VARCHAR(255),
 
-            time TEXT,
+            time VARCHAR(255),
 
-            file_count INTEGER,
+            file_count INT,
 
-            size_kb INTEGER
+            size_kb INT
 
         )
-    ''')
 
-    conn.commit()
+    """)
 
-    conn.close()
+    db.commit()
+
+    db.close()
 
 
-# Run database setup
+# Initialize table
 init_db()
 
 
@@ -72,39 +91,31 @@ def merge_pdf_page():
 @app.route('/convert', methods=['POST'])
 def convert():
 
-    # Get uploaded images
     files = request.files.getlist('images')
 
     image_list = []
 
     total_size = 0
 
-    # Loop through uploaded images
     for file in files:
 
         if file:
 
-            # Calculate file size
             total_size += len(file.read())
 
-            # Reset file pointer
             file.seek(0)
 
-            # Open image
             img = Image.open(file).convert('RGB')
 
-            # Store image in list
             image_list.append(img)
 
-    # Safety check
     if not image_list:
 
         return "No images uploaded"
 
-    # Create memory PDF
+    # Create temporary PDF in memory
     pdf_bytes = BytesIO()
 
-    # Save images into PDF
     image_list[0].save(
 
         pdf_bytes,
@@ -117,21 +128,23 @@ def convert():
 
     )
 
-    # Reset memory pointer
     pdf_bytes.seek(0)
 
     # ---------------- SAVE ANALYTICS ----------------
 
-    conn = sqlite3.connect('database.db')
+    db = mysql.connector.connect(**db_config)
 
-    cursor = conn.cursor()
+    cursor = db.cursor()
 
-    cursor.execute('''
+    cursor.execute("""
+
         INSERT INTO analytics
+
         (tool, time, file_count, size_kb)
 
-        VALUES (?, ?, ?, ?)
-    ''', (
+        VALUES (%s, %s, %s, %s)
+
+    """, (
 
         "image_to_pdf",
 
@@ -143,11 +156,11 @@ def convert():
 
     ))
 
-    conn.commit()
+    db.commit()
 
-    conn.close()
+    db.close()
 
-    # Send PDF to user
+    # Send PDF
     return send_file(
 
         pdf_bytes,
@@ -164,50 +177,46 @@ def convert():
 @app.route('/merge', methods=['POST'])
 def merge():
 
-    # Get uploaded PDFs
     files = request.files.getlist('pdfs')
 
     merger = PdfMerger()
 
     total_size = 0
 
-    # Loop through uploaded PDFs
     for file in files:
 
         if file:
 
-            # Calculate file size
             total_size += len(file.read())
 
-            # Reset pointer
             file.seek(0)
 
-            # Add PDF
             merger.append(file)
 
-    # Create memory PDF
+    # Create merged PDF in memory
     merged_pdf = BytesIO()
 
-    # Write merged PDF
     merger.write(merged_pdf)
 
     merger.close()
 
-    # Reset memory pointer
     merged_pdf.seek(0)
 
     # ---------------- SAVE ANALYTICS ----------------
 
-    conn = sqlite3.connect('database.db')
+    db = mysql.connector.connect(**db_config)
 
-    cursor = conn.cursor()
+    cursor = db.cursor()
 
-    cursor.execute('''
+    cursor.execute("""
+
         INSERT INTO analytics
+
         (tool, time, file_count, size_kb)
 
-        VALUES (?, ?, ?, ?)
-    ''', (
+        VALUES (%s, %s, %s, %s)
+
+    """, (
 
         "pdf_merge",
 
@@ -219,9 +228,9 @@ def merge():
 
     ))
 
-    conn.commit()
+    db.commit()
 
-    conn.close()
+    db.close()
 
     # Send merged PDF
     return send_file(
@@ -235,49 +244,58 @@ def merge():
     )
 
 
-# ---------------- VIEW ANALYTICS ----------------
+# ---------------- ANALYTICS ROUTE ----------------
 
 @app.route('/analytics')
 def analytics():
 
-    conn = sqlite3.connect('database.db')
+    db = mysql.connector.connect(**db_config)
 
-    cursor = conn.cursor()
+    cursor = db.cursor()
 
-    cursor.execute('SELECT * FROM analytics')
+    cursor.execute("""
+
+        SELECT * FROM analytics
+        ORDER BY id ASC
+
+    """)
 
     data = cursor.fetchall()
 
-    conn.close()
+    db.close()
 
     return {
+
         "analytics": data
+
     }
 
-# ---------------- EXPORT TO EXCEL ----------------
+
+# ---------------- EXPORT EXCEL ----------------
 
 @app.route('/export-excel')
 def export_excel():
 
-    # Connect database
-    conn = sqlite3.connect('database.db')
+    db = mysql.connector.connect(**db_config)
 
-    # Read analytics table
-    query = "SELECT * FROM analytics"
+    query = """
 
-    # Convert into dataframe
-    df = pd.read_sql_query(query, conn)
+        SELECT * FROM analytics
+        ORDER BY id ASC
 
-    # Close database
-    conn.close()
+    """
 
-    # Create Excel file
-    excel_file = "analytics.xlsx"
+    df = pd.read_sql(query, db)
 
-    # Save dataframe to Excel
+    db.close()
+
+    # Create unique filename
+    excel_file = f"analytics_{int(datetime.datetime.now().timestamp())}.xlsx"
+
+    # Save Excel
     df.to_excel(excel_file, index=False)
 
-    # Send Excel file to user
+    # Download Excel
     return send_file(
 
         excel_file,
@@ -285,6 +303,7 @@ def export_excel():
         as_attachment=True
 
     )
+
 
 # ---------------- RUN APP ----------------
 
