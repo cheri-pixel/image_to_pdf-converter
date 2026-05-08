@@ -1,1 +1,173 @@
+<!DOCTYPE html>
+<html>
 
+<head>
+    <title>PDF Tools</title>
+</head>
+
+<body>
+
+    <h1>Secure PDF Tools</h1>
+
+    <hr>
+
+    <!-- IMAGE TO PDF -->
+
+    <h2>Convert Images to PDF</h2>
+
+    <form action="/convert" method="post" enctype="multipart/form-data">
+
+        <input
+            type="file"
+            name="images"
+            multiple
+            required
+        >
+
+        <br><br>
+
+        <button type="submit">
+            Convert to PDF
+        </button>
+
+    </form>
+
+    <hr>
+
+    <!-- PDF MERGE -->
+
+    <h2>Merge PDFs</h2>
+
+    <input
+        type="file"
+        id="pdfInput"
+        accept=".pdf"
+    >
+
+    <button onclick="addFile()">
+        Add PDF
+    </button>
+
+    <h3>Selected Files:</h3>
+
+    <ul id="fileList"></ul>
+
+    <form
+        id="mergeForm"
+        action="/merge"
+        method="post"
+        enctype="multipart/form-data"
+    >
+
+        <button type="submit">
+            Merge PDFs
+        </button>
+
+    </form>
+
+
+    <!-- JAVASCRIPT -->
+
+    <script>
+
+        // Store selected files
+        let selectedFiles = [];
+
+
+
+        // Add file function
+        function addFile() {
+
+            // Get input field
+            const input = document.getElementById("pdfInput");
+
+            // Get selected file
+            const file = input.files[0];
+
+
+
+            // Check file exists
+            if (file) {
+
+                // Add file into array
+                selectedFiles.push(file);
+
+                // Update screen
+                displayFiles();
+
+                // Reset input
+                input.value = "";
+            }
+        }
+
+
+
+        // Display files on screen
+        function displayFiles() {
+
+            // Get list element
+            const list = document.getElementById("fileList");
+
+            // Clear previous display
+            list.innerHTML = "";
+
+
+
+            // Loop through files
+            selectedFiles.forEach((file) => {
+
+                // Create list item
+                const li = document.createElement("li");
+
+                // Show filename
+                li.textContent = file.name;
+
+                // Add to list
+                list.appendChild(li);
+
+            });
+        }
+
+
+
+        // When form submits
+        document.getElementById("mergeForm")
+        .addEventListener("submit", function (e) {
+
+            const form = e.target;
+
+            // Temporary container
+            const dataTransfer = new DataTransfer();
+
+
+
+            // Add all files
+            selectedFiles.forEach(file => {
+                dataTransfer.items.add(file);
+            });
+
+
+
+            // Create hidden input
+            const input = document.createElement("input");
+
+            input.type = "file";
+
+            input.name = "pdfs";
+
+            input.files = dataTransfer.files;
+
+            input.style.display = "none";
+
+
+
+            // Add hidden input to form
+            form.appendChild(input);
+
+        });
+
+    </script>
+
+</body>
+
+</html>
