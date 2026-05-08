@@ -5,6 +5,7 @@ from io import BytesIO
 import datetime
 import sqlite3
 import os
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -253,6 +254,37 @@ def analytics():
         "analytics": data
     }
 
+# ---------------- EXPORT TO EXCEL ----------------
+
+@app.route('/export-excel')
+def export_excel():
+
+    # Connect database
+    conn = sqlite3.connect('database.db')
+
+    # Read analytics table
+    query = "SELECT * FROM analytics"
+
+    # Convert into dataframe
+    df = pd.read_sql_query(query, conn)
+
+    # Close database
+    conn.close()
+
+    # Create Excel file
+    excel_file = "analytics.xlsx"
+
+    # Save dataframe to Excel
+    df.to_excel(excel_file, index=False)
+
+    # Send Excel file to user
+    return send_file(
+
+        excel_file,
+
+        as_attachment=True
+
+    )
 
 # ---------------- RUN APP ----------------
 
