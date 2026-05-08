@@ -3,21 +3,71 @@ from PIL import Image
 from PyPDF2 import PdfMerger
 from io import BytesIO
 import datetime
+import sqlite3
 import os
 
 app = Flask(__name__)
 
-# Analytics storage
-analytics = []
+
+# ---------------- DATABASE SETUP ----------------
+
+def init_db():
+
+    conn = sqlite3.connect('database.db')
+
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS analytics (
+
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            tool TEXT,
+
+            time TEXT,
+
+            file_count INTEGER,
+
+            size_kb INTEGER
+
+        )
+    ''')
+
+    conn.commit()
+
+    conn.close()
+
+
+# Run database setup
+init_db()
 
 
 # ---------------- HOME PAGE ----------------
+
 @app.route('/')
-def index():
-    return render_template('index.html')
+def home():
+
+    return render_template('home.html')
 
 
-# ---------------- IMAGE TO PDF ----------------
+# ---------------- IMAGE TO PDF PAGE ----------------
+
+@app.route('/image-to-pdf')
+def image_to_pdf_page():
+
+    return render_template('image_to_pdf.html')
+
+
+# ---------------- PDF MERGE PAGE ----------------
+
+@app.route('/merge-pdf')
+def merge_pdf_page():
+
+    return render_template('merge_pdf.html')
+
+
+# ---------------- IMAGE TO PDF CONVERTER ----------------
+
 @app.route('/convert', methods=['POST'])
 def convert():
 
@@ -25,6 +75,7 @@ def convert():
     files = request.files.getlist('images')
 
     image_list = []
+
     total_size = 0
 
     # Loop through uploaded images
@@ -38,7 +89,7 @@ def convert():
             # Reset file pointer
             file.seek(0)
 
-            # Open image and convert to RGB
+            # Open image
             img = Image.open(file).convert('RGB')
 
             # Store image in list
@@ -46,39 +97,69 @@ def convert():
 
     # Safety check
     if not image_list:
+
         return "No images uploaded"
 
-    # Create temporary memory PDF
+    # Create memory PDF
     pdf_bytes = BytesIO()
 
-    # Save images into one PDF
+    # Save images into PDF
     image_list[0].save(
+
         pdf_bytes,
+
         format='PDF',
+
         save_all=True,
+
         append_images=image_list[1:]
+
     )
 
     # Reset memory pointer
     pdf_bytes.seek(0)
 
-    # Store analytics only
-    analytics.append({
-        "tool": "image_to_pdf",
-        "time": str(datetime.datetime.now()),
-        "file_count": len(files),
-        "size_kb": total_size // 1024
-    })
+    # ---------------- SAVE ANALYTICS ----------------
+
+    conn = sqlite3.connect('database.db')
+
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        INSERT INTO analytics
+        (tool, time, file_count, size_kb)
+
+        VALUES (?, ?, ?, ?)
+    ''', (
+
+        "image_to_pdf",
+
+        str(datetime.datetime.now()),
+
+        len(files),
+
+        total_size // 1024
+
+    ))
+
+    conn.commit()
+
+    conn.close()
 
     # Send PDF to user
     return send_file(
+
         pdf_bytes,
+
         as_attachment=True,
+
         download_name="converted.pdf"
+
     )
 
 
-# ---------------- PDF MERGE ----------------
+# ---------------- PDF MERGER ----------------
+
 @app.route('/merge', methods=['POST'])
 def merge():
 
@@ -89,61 +170,102 @@ def merge():
 
     total_size = 0
 
-    # Loop through PDFs
+    # Loop through uploaded PDFs
     for file in files:
 
         if file:
 
-            # Calculate size
+            # Calculate file size
             total_size += len(file.read())
 
             # Reset pointer
             file.seek(0)
 
-            # Add PDF to merger
+            # Add PDF
             merger.append(file)
 
-    # Create memory file
+    # Create memory PDF
     merged_pdf = BytesIO()
 
     # Write merged PDF
     merger.write(merged_pdf)
 
-    # Close merger
     merger.close()
 
-    # Reset pointer
+    # Reset memory pointer
     merged_pdf.seek(0)
 
-    # Store analytics
-    analytics.append({
-        "tool": "pdf_merge",
-        "time": str(datetime.datetime.now()),
-        "file_count": len(files),
-        "size_kb": total_size // 1024
-    })
+    # ---------------- SAVE ANALYTICS ----------------
+
+    conn = sqlite3.connect('database.db')
+
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        INSERT INTO analytics
+        (tool, time, file_count, size_kb)
+
+        VALUES (?, ?, ?, ?)
+    ''', (
+
+        "pdf_merge",
+
+        str(datetime.datetime.now()),
+
+        len(files),
+
+        total_size // 1024
+
+    ))
+
+    conn.commit()
+
+    conn.close()
 
     # Send merged PDF
     return send_file(
+
         merged_pdf,
+
         as_attachment=True,
+
         download_name="merged.pdf"
+
     )
 
 
-# ---------------- ANALYTICS ----------------
+# ---------------- VIEW ANALYTICS ----------------
+
 @app.route('/analytics')
-def view_analytics():
-    return {"data": analytics}
+def analytics():
+
+    conn = sqlite3.connect('database.db')
+
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT * FROM analytics')
+
+    data = cursor.fetchall()
+
+    conn.close()
+
+    return {
+        "analytics": data
+    }
 
 
 # ---------------- RUN APP ----------------
+
 if __name__ == '__main__':
 
     port = int(os.environ.get("PORT", 5000))
 
     app.run(
+
         host='0.0.0.0',
+
         port=port,
+
         debug=True
+
     )
