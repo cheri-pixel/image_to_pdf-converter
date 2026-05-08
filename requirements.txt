@@ -2,3 +2,5 @@ Flask
 Pillow
 PyPDF2
 gunicorn
+Pandas
+Openpyxl
