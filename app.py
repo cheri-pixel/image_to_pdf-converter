@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request, send_file, redirect, session
 from PIL import Image
 from PyPDF2 import PdfMerger
 from io import BytesIO
@@ -7,12 +7,18 @@ import pandas as pd
 import datetime
 import os
 from dotenv import load_dotenv
+
+# ---------------- LOAD ENV VARIABLES ----------------
+
 load_dotenv()
+
+# ---------------- FLASK APP ----------------
 
 app = Flask(__name__)
 
+app.secret_key = "your_secret_key"
 
-# ---------------- MYSQL DATABASE CONNECTION ----------------
+# ---------------- MYSQL DATABASE CONFIG ----------------
 
 db_config = {
 
@@ -28,8 +34,7 @@ db_config = {
 
 }
 
-
-# ---------------- CREATE DATABASE TABLE ----------------
+# ---------------- CREATE DATABASE TABLES ----------------
 
 def init_db():
 
@@ -37,6 +42,7 @@ def init_db():
 
     cursor = db.cursor()
 
+    # ANALYTICS TABLE
     cursor.execute("""
 
         CREATE TABLE IF NOT EXISTS analytics (
@@ -55,14 +61,29 @@ def init_db():
 
     """)
 
+    # USERS TABLE
+    cursor.execute("""
+
+        CREATE TABLE IF NOT EXISTS users (
+
+            id INT AUTO_INCREMENT PRIMARY KEY,
+
+            username VARCHAR(255),
+
+            email VARCHAR(255),
+
+            password VARCHAR(255)
+
+        )
+
+    """)
+
     db.commit()
 
     db.close()
 
-
-# Initialize table
+# RUN DATABASE SETUP
 init_db()
-
 
 # ---------------- HOME PAGE ----------------
 
@@ -71,14 +92,12 @@ def home():
 
     return render_template('home.html')
 
-
 # ---------------- IMAGE TO PDF PAGE ----------------
 
 @app.route('/image-to-pdf')
 def image_to_pdf_page():
 
     return render_template('image_to_pdf.html')
-
 
 # ---------------- PDF MERGE PAGE ----------------
 
@@ -87,11 +106,113 @@ def merge_pdf_page():
 
     return render_template('merge_pdf.html')
 
+# ---------------- SIGNUP ----------------
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+
+    if request.method == 'POST':
+
+        username = request.form['username']
+
+        email = request.form['email']
+
+        password = request.form['password']
+
+        db = mysql.connector.connect(**db_config)
+
+        cursor = db.cursor()
+
+        cursor.execute("""
+
+            INSERT INTO users
+
+            (username, email, password)
+
+            VALUES (%s, %s, %s)
+
+        """, (
+
+            username,
+
+            email,
+
+            password
+
+        ))
+
+        db.commit()
+
+        db.close()
+
+        return redirect('/login')
+
+    return render_template('signup.html')
+
+# ---------------- LOGIN ----------------
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+
+    if request.method == 'POST':
+
+        email = request.form['email']
+
+        password = request.form['password']
+
+        db = mysql.connector.connect(**db_config)
+
+        cursor = db.cursor(dictionary=True)
+
+        cursor.execute("""
+
+            SELECT * FROM users
+
+            WHERE email=%s AND password=%s
+
+        """, (
+
+            email,
+
+            password
+
+        ))
+
+        user = cursor.fetchone()
+
+        db.close()
+
+        if user:
+
+            session['user_id'] = user['id']
+
+            session['username'] = user['username']
+
+            return redirect('/')
+
+        else:
+
+            return "Invalid credentials"
+
+    return render_template('login.html')
+
+# ---------------- LOGOUT ----------------
+
+@app.route('/logout')
+def logout():
+
+    session.clear()
+
+    return redirect('/login')
 
 # ---------------- IMAGE TO PDF CONVERTER ----------------
 
 @app.route('/convert', methods=['POST'])
 def convert():
+
+    if 'user_id' not in session:
+
+        return redirect('/login')
 
     files = request.files.getlist('images')
 
@@ -115,7 +236,7 @@ def convert():
 
         return "No images uploaded"
 
-    # Create temporary PDF in memory
+    # CREATE PDF IN MEMORY
     pdf_bytes = BytesIO()
 
     image_list[0].save(
@@ -132,8 +253,7 @@ def convert():
 
     pdf_bytes.seek(0)
 
-    # ---------------- SAVE ANALYTICS ----------------
-
+    # SAVE ANALYTICS
     db = mysql.connector.connect(**db_config)
 
     cursor = db.cursor()
@@ -162,7 +282,6 @@ def convert():
 
     db.close()
 
-    # Send PDF
     return send_file(
 
         pdf_bytes,
@@ -173,11 +292,14 @@ def convert():
 
     )
 
-
 # ---------------- PDF MERGER ----------------
 
 @app.route('/merge', methods=['POST'])
 def merge():
+
+    if 'user_id' not in session:
+
+        return redirect('/login')
 
     files = request.files.getlist('pdfs')
 
@@ -195,7 +317,6 @@ def merge():
 
             merger.append(file)
 
-    # Create merged PDF in memory
     merged_pdf = BytesIO()
 
     merger.write(merged_pdf)
@@ -204,8 +325,7 @@ def merge():
 
     merged_pdf.seek(0)
 
-    # ---------------- SAVE ANALYTICS ----------------
-
+    # SAVE ANALYTICS
     db = mysql.connector.connect(**db_config)
 
     cursor = db.cursor()
@@ -234,7 +354,6 @@ def merge():
 
     db.close()
 
-    # Send merged PDF
     return send_file(
 
         merged_pdf,
@@ -245,8 +364,7 @@ def merge():
 
     )
 
-
-# ---------------- ANALYTICS ROUTE ----------------
+# ---------------- ANALYTICS ----------------
 
 @app.route('/analytics')
 def analytics():
@@ -272,7 +390,6 @@ def analytics():
 
     }
 
-
 # ---------------- EXPORT EXCEL ----------------
 
 @app.route('/export-excel')
@@ -291,13 +408,10 @@ def export_excel():
 
     db.close()
 
-    # Create unique filename
     excel_file = f"analytics_{int(datetime.datetime.now().timestamp())}.xlsx"
 
-    # Save Excel
     df.to_excel(excel_file, index=False)
 
-    # Download Excel
     return send_file(
 
         excel_file,
@@ -305,7 +419,6 @@ def export_excel():
         as_attachment=True
 
     )
-
 
 # ---------------- RUN APP ----------------
 
