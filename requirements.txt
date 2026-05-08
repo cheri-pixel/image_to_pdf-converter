@@ -1,1 +1,4 @@
-
+Flask
+Pillow
+PyPDF2
+gunicorn
