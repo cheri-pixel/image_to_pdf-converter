@@ -7,6 +7,7 @@ import pandas as pd
 import datetime
 import os
 from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # ---------------- LOAD ENV VARIABLES ----------------
 
@@ -60,6 +61,26 @@ def init_db():
         )
 
     """)
+
+    # ---------------- MASK EMAIL FUNCTION ----------------
+
+def mask_email(email):
+
+    parts = email.split("@")
+
+    username = parts[0]
+
+    domain = parts[1]
+
+    if len(username) > 4:
+
+        masked_username = username[:4] + "****"
+
+    else:
+
+        masked_username = username[0] + "***"
+
+    return masked_username + "@" + domain
 
     # USERS TABLE
     cursor.execute("""
@@ -117,7 +138,7 @@ def signup():
 
         email = request.form['email']
 
-        password = request.form['password']
+        password = generate_password_hash(request.form['password'])
 
         db = mysql.connector.connect(**db_config)
 
@@ -158,7 +179,7 @@ def login():
 
         email = request.form['email']
 
-        password = request.form['password']
+        password = generate_password_hash(request.form['password'])
 
         db = mysql.connector.connect(**db_config)
 
@@ -168,13 +189,11 @@ def login():
 
             SELECT * FROM users
 
-            WHERE email=%s AND password=%s
+            WHERE email=%s
 
         """, (
 
             email,
-
-            password
 
         ))
 
@@ -182,7 +201,7 @@ def login():
 
         db.close()
 
-        if user:
+        if user and check_password_hash(user['password'],password):
 
             session['user_id'] = user['id']
 
@@ -371,18 +390,35 @@ def analytics():
 
     db = mysql.connector.connect(**db_config)
 
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
 
     cursor.execute("""
 
-        SELECT * FROM analytics
-        ORDER BY id ASC
+        SELECT
+            analytics.id,
+            users.email,
+            analytics.tool,
+            analytics.time,
+            analytics.file_count,
+            analytics.size_kb
+
+        FROM analytics
+
+        JOIN users
+        ON analytics.user_id = users.id
+
+        ORDER BY analytics.id ASC
 
     """)
 
     data = cursor.fetchall()
 
     db.close()
+
+    # MASK EMAILS
+    for row in data:
+
+        row['email'] = mask_email(row['email'])
 
     return {
 
