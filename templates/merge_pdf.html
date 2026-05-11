@@ -2,173 +2,164 @@
 <html>
 
 <head>
-    <title>Merge PDFs</title>
-     <link
+
+    <title>Merge PDF</title>
+
+    <link
         rel="stylesheet"
         href="{{ url_for('static', filename='style.css') }}"
     >
+
 </head>
 
 <body>
 
+    <div class="navbar">
+
+        <h3>PDF Merger</h3>
+
+        <div>
+
+            <a href="/">
+
+                Home
+
+            </a>
+
+            <a href="/logout">
+
+                Logout
+
+            </a>
+
+        </div>
+
+    </div>
+
     <div class="container">
 
-        <h1>Merge PDF Files</h1>
+        <div class="card">
 
-    <hr>
+            <h1>Merge PDFs</h1>
 
-    <!-- FILE INPUT -->
+            <form
+                action="/merge"
+                method="POST"
+                enctype="multipart/form-data"
+            >
 
-    <input
-        type="file"
-        id="pdfInput"
-        accept=".pdf"
-    >
+                <input
+                    type="file"
+                    id="pdfInput"
+                    name="pdfs"
+                    accept=".pdf"
+                    multiple
+                    required
+                >
 
-    <!-- ADD BUTTON -->
+                <div id="fileList"></div>
 
-    <button onclick="addFile()">
+                <button type="submit">
 
-        Add PDF
+                    Merge PDFs
 
-    </button>
+                </button>
 
-    <hr>
+            </form>
 
-    <h3>Selected Files:</h3>
+        </div>
 
-    <ul id="fileList"></ul>
-
-
-    <!-- MERGE FORM -->
-
-    <form
-        id="mergeForm"
-        action="/merge"
-        method="post"
-        enctype="multipart/form-data"
-    >
-
-        <button type="submit">
-
-            Merge PDFs
-
-        </button>
-
-    </form>
-
-    <br><br>
-
-    <a href="/">
-
-        <button>
-            Back to Home
-        </button>
-
-    </a>
-
-
-    <!-- JAVASCRIPT -->
+    </div>
 
     <script>
 
-        // Store selected files
+        const input = document.getElementById("pdfInput");
+
+        const fileList = document.getElementById("fileList");
+
         let selectedFiles = [];
 
+        input.addEventListener("change", function(event) {
 
+            const newFiles = Array.from(event.target.files);
 
-        // Add selected PDF
-        function addFile() {
+            selectedFiles = [...selectedFiles, ...newFiles];
 
-            // Get input field
-            const input = document.getElementById("pdfInput");
+            renderFiles();
 
-            // Get selected file
-            const file = input.files[0];
+        });
 
+        function renderFiles() {
 
+            fileList.innerHTML = "";
 
-            // Check file exists
-            if (file) {
+            selectedFiles.forEach((file, index) => {
 
-                // Store file
-                selectedFiles.push(file);
+                const fileItem = document.createElement("div");
 
-                // Update display
-                displayFiles();
+                fileItem.style.marginTop = "10px";
 
-                // Reset input
-                input.value = "";
-            }
-        }
+                fileItem.style.display = "flex";
 
+                fileItem.style.justifyContent = "space-between";
 
+                fileItem.style.alignItems = "center";
 
-        // Display selected files
-        function displayFiles() {
+                fileItem.style.background = "#f1f1f1";
 
-            // Get file list area
-            const list = document.getElementById("fileList");
+                fileItem.style.padding = "10px";
 
-            // Clear old list
-            list.innerHTML = "";
+                fileItem.style.borderRadius = "8px";
 
+                const fileName = document.createElement("span");
 
+                fileName.textContent = file.name;
 
-            // Loop through files
-            selectedFiles.forEach((file) => {
+                const removeBtn = document.createElement("span");
 
-                // Create list item
-                const li = document.createElement("li");
+                removeBtn.textContent = "×";
 
-                // Show file name
-                li.textContent = file.name;
+                removeBtn.style.cursor = "pointer";
 
-                // Add to screen
-                list.appendChild(li);
+               removeBtn.style.color = "black";
+
+                removeBtn.style.fontWeight = "normal";
+
+                removeBtn.style.fontSize = "16px";
+
+                removeBtn.onclick = () => {
+
+                    selectedFiles.splice(index, 1);
+
+                    renderFiles();
+
+                };
+
+                fileItem.appendChild(fileName);
+
+                fileItem.appendChild(removeBtn);
+
+                fileList.appendChild(fileItem);
 
             });
+
+            updateFileInput();
+
         }
 
+        function updateFileInput() {
 
-
-        // Submit all files together
-        document.getElementById("mergeForm")
-        .addEventListener("submit", function (e) {
-
-            const form = e.target;
-
-            // Temporary file container
             const dataTransfer = new DataTransfer();
 
-
-
-            // Add files into container
             selectedFiles.forEach(file => {
 
                 dataTransfer.items.add(file);
 
             });
 
-
-
-            // Create hidden input
-            const input = document.createElement("input");
-
-            input.type = "file";
-
-            input.name = "pdfs";
-
             input.files = dataTransfer.files;
 
-            input.style.display = "none";
-
-
-
-            // Add hidden input to form
-            form.appendChild(input);
-
-        });
+        }
 
     </script>
 
