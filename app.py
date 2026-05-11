@@ -115,17 +115,7 @@ init_db()
 @app.route('/')
 def home():
 
-    if 'user_id' not in session:
-
-        return redirect('/login')
-
-    return render_template(
-
-        'home.html',
-
-        username=session['username']
-
-    )
+    return render_template('home.html')
 
 # ---------------- IMAGE TO PDF PAGE ----------------
 
