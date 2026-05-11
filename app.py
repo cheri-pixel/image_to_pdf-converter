@@ -46,21 +46,44 @@ def init_db():
     # ANALYTICS TABLE
     cursor.execute("""
 
-        CREATE TABLE IF NOT EXISTS analytics (
+    CREATE TABLE IF NOT EXISTS analytics (
+
+        id INT AUTO_INCREMENT PRIMARY KEY,
+
+        user_id INT,
+
+        tool VARCHAR(255),
+
+        time VARCHAR(255),
+
+        file_count INT,
+
+        size_kb INT
+
+    )
+
+""")
+
+# USERS TABLE
+    cursor.execute("""
+
+        CREATE TABLE IF NOT EXISTS users (
 
             id INT AUTO_INCREMENT PRIMARY KEY,
 
-            tool VARCHAR(255),
+            username VARCHAR(255),
 
-            time VARCHAR(255),
+            email VARCHAR(255),
 
-            file_count INT,
-
-            size_kb INT
+            password VARCHAR(255)
 
         )
 
     """)
+
+    db.commit()
+
+    db.close()
 
     # ---------------- MASK EMAIL FUNCTION ----------------
 
@@ -82,26 +105,7 @@ def mask_email(email):
 
     return masked_username + "@" + domain
 
-    # USERS TABLE
-    cursor.execute("""
-
-        CREATE TABLE IF NOT EXISTS users (
-
-            id INT AUTO_INCREMENT PRIMARY KEY,
-
-            username VARCHAR(255),
-
-            email VARCHAR(255),
-
-            password VARCHAR(255)
-
-        )
-
-    """)
-
-    db.commit()
-
-    db.close()
+    
 
 # RUN DATABASE SETUP
 init_db()
@@ -111,12 +115,26 @@ init_db()
 @app.route('/')
 def home():
 
-    return render_template('home.html')
+    if 'user_id' not in session:
+
+        return redirect('/login')
+
+    return render_template(
+
+        'home.html',
+
+        username=session['username']
+
+    )
 
 # ---------------- IMAGE TO PDF PAGE ----------------
 
 @app.route('/image-to-pdf')
 def image_to_pdf_page():
+
+    if 'user_id' not in session:
+
+        return redirect('/login')
 
     return render_template('image_to_pdf.html')
 
@@ -124,6 +142,10 @@ def image_to_pdf_page():
 
 @app.route('/merge-pdf')
 def merge_pdf_page():
+
+    if 'user_id' not in session:
+
+        return redirect('/login')
 
     return render_template('merge_pdf.html')
 
@@ -277,19 +299,23 @@ def convert():
 
         INSERT INTO analytics
 
-        (tool, time, file_count, size_kb)
+(user_id, tool, time, file_count, size_kb)
 
-        VALUES (%s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s)
 
     """, (
 
-        "image_to_pdf",
+       
+    session['user_id'],
 
-        str(datetime.datetime.now()),
+    "image_to_pdf",
 
-        len(files),
+    str(datetime.datetime.now()),
 
-        total_size // 1024
+    len(files),
+
+    total_size // 1024
+
 
     ))
 
@@ -349,11 +375,13 @@ def merge():
 
         INSERT INTO analytics
 
-        (tool, time, file_count, size_kb)
+        (user_id, tool, time, file_count, size_kb)
 
-        VALUES (%s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s)
 
     """, (
+
+        session['user_id'],
 
         "pdf_merge",
 
@@ -379,10 +407,15 @@ def merge():
 
     )
 
+
 # ---------------- ANALYTICS ----------------
 
 @app.route('/analytics')
 def analytics():
+
+    if 'user_id' not in session:
+
+        return redirect('/login')
 
     db = mysql.connector.connect(**db_config)
 
@@ -391,16 +424,23 @@ def analytics():
     cursor.execute("""
 
         SELECT
+
             analytics.id,
+
             users.email,
+
             analytics.tool,
+
             analytics.time,
+
             analytics.file_count,
+
             analytics.size_kb
 
         FROM analytics
 
         JOIN users
+
         ON analytics.user_id = users.id
 
         ORDER BY analytics.id ASC
@@ -410,6 +450,17 @@ def analytics():
     data = cursor.fetchall()
 
     db.close()
+
+    # MASK EMAILS
+    for row in data:
+
+        row['email'] = mask_email(row['email'])
+
+    return {
+
+        "analytics": data
+
+    }
 
     # MASK EMAILS
     for row in data:
