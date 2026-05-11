@@ -179,7 +179,7 @@ def login():
 
         email = request.form['email']
 
-        password = generate_password_hash(request.form['password'])
+        password = request.form['password']
 
         db = mysql.connector.connect(**db_config)
 
@@ -191,17 +191,13 @@ def login():
 
             WHERE email=%s
 
-        """, (
-
-            email,
-
-        ))
+        """, (email,))
 
         user = cursor.fetchone()
 
         db.close()
 
-        if user and check_password_hash(user['password'],password):
+        if user and check_password_hash(user['password'], password):
 
             session['user_id'] = user['id']
 
