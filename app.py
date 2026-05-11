@@ -462,32 +462,48 @@ def analytics():
 
     }
 
-    # MASK EMAILS
-    for row in data:
-
-        row['email'] = mask_email(row['email'])
-
-    return {
-
-        "analytics": data
-
-    }
-
 # ---------------- EXPORT EXCEL ----------------
 
 @app.route('/export-excel')
 def export_excel():
 
+    if 'user_id' not in session:
+
+        return redirect('/login')
+
     db = mysql.connector.connect(**db_config)
 
     query = """
 
-        SELECT * FROM analytics
-        ORDER BY id ASC
+       SELECT
+
+        analytics.id,
+
+        users.email,
+
+        analytics.tool,
+
+        analytics.time,
+
+        analytics.file_count,
+
+        analytics.size_kb
+
+    FROM analytics
+
+    JOIN users
+
+    ON analytics.user_id = users.id
+
+    ORDER BY analytics.id ASC
 
     """
 
     df = pd.read_sql(query, db)
+    
+    if 'email' in df.columns:
+
+        df['email'] = df['email'].apply(mask_email)
 
     db.close()
 
