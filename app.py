@@ -85,26 +85,6 @@ def init_db():
 
     db.close()
 
-    # ---------------- MASK EMAIL FUNCTION ----------------
-
-def mask_email(email):
-
-    parts = email.split("@")
-
-    username = parts[0]
-
-    domain = parts[1]
-
-    if len(username) > 4:
-
-        masked_username = username[:4] + "****"
-
-    else:
-
-        masked_username = username[0] + "***"
-
-    return masked_username + "@" + domain
-
     
 
 # RUN DATABASE SETUP
@@ -451,17 +431,12 @@ def analytics():
     data = cursor.fetchall()
 
     db.close()
-
-    # MASK EMAILS
-    for row in data:
-
-        row['email'] = mask_email(row['email'])
-
     return {
 
-        "analytics": data
+    "analytics": data
 
-    }
+}
+
 
 # ---------------- EXPORT EXCEL ----------------
 
@@ -501,10 +476,6 @@ def export_excel():
     """
 
     df = pd.read_sql(query, db)
-    
-    if 'email' in df.columns:
-
-        df['email'] = df['email'].apply(mask_email)
 
     db.close()
 
