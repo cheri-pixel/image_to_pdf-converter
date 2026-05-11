@@ -192,6 +192,7 @@ def signup():
 
     return render_template('signup.html')
 
+
 # ---------------- LOGIN ----------------
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -218,6 +219,16 @@ def login():
         user = cursor.fetchone()
 
         db.close()
+
+        print(user)
+
+        print(password)
+
+        if user:
+
+            print(user['password'])
+
+            print(check_password_hash(user['password'], password))
 
         if user and check_password_hash(user['password'], password):
 
