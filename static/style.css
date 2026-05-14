@@ -72,6 +72,8 @@ button {
 
     width: 220px;
 
+     align-items: center;
+
 }
 
 button: hover {
