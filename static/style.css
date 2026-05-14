@@ -1,76 +1,12 @@
 body {
 
-    font-family: Georgia, 'Times New Roman', Times, serif;
-
-    background-color: #f5f5f5;
-
     margin: 0;
 
     padding: 0;
 
-    text-align: center;
+    background: #f4f4f4;
 
-}
-
-.container {
-
-    margin-top: 80px;
-
-}
-
-h1 {
-
-    color: #222;
-
-    font-size: 48px;
-
-}
-
-h2 {
-
-    color: #555;
-
-}
-
-button {
-
-    background-color: black;
-
-    color: white;
-
-    border: none;
-
-    padding: 15px 30px;
-
-    margin: 15px;
-
-    border-radius: 10px;
-
-    font-size: 18px;
-
-    cursor: pointer;
-
-}
-
-button:hover {
-
-    background-color: #333;
-
-}
-
-.card {
-
-    background: white;
-
-    width: 400px;
-
-    margin: auto;
-
-    padding: 30px;
-
-    border-radius: 15px;
-
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+    font-family: Arial, sans-serif;
 
 }
 
@@ -88,6 +24,60 @@ button:hover {
 
 }
 
+.container {
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+
+    margin-top: 80px;
+
+}
+
+h1 {
+
+    font-size: 64px;
+
+    margin-bottom: 20px;
+
+}
+
+h2 {
+
+    font-size: 36px;
+
+    margin-bottom: 30px;
+
+}
+
+button {
+
+    background: black;
+
+    color: white;
+
+    border: none;
+
+    padding: 18px 40px;
+
+    font-size: 24px;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+
+}
+
+button:hover {
+
+    opacity: 0.85;
+
+}
+
 .logout-btn,
 .home-btn {
 
@@ -97,29 +87,10 @@ button:hover {
 
     color: white;
 
-    padding: 10px 20px;
+    padding: 12px 24px;
 
     border-radius: 8px;
 
-    font-size: 16px;
-
-}
-
-.logout-btn:hover,
-.home-btn:hover {
-
-    opacity: 0.8;
-
-}
-
-#fileList {
-
-    margin-top: 20px;
-
-}
-
-#fileList div {
-
-    font-size: 14px;
+    font-size: 18px;
 
 }
