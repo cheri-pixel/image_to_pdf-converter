@@ -70,9 +70,11 @@ button {
 
     cursor: pointer;
 
+    width: 220px;
+
 }
 
-button:hover {
+button: hover {
 
     opacity: 0.85;
 
@@ -99,7 +101,7 @@ button:hover {
 
     align-items: center;
 
-    min-width: 220px;  
+    width: 220px;  
 
     box-sizing: border-box;
 
