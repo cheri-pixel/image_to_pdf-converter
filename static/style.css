@@ -94,3 +94,11 @@ button:hover {
     font-size: 18px;
 
 }
+
+.container a {
+
+    display: flex;
+
+    justify-content: center;
+
+}
