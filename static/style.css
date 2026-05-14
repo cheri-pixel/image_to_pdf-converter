@@ -99,9 +99,13 @@ button:hover {
 
     align-items: center;
 
-    width: 160px;  
+    min-width: 220px;  
 
     box-sizing: border-box;
+
+    text-align: center;
+
+    white-space: nowrap;
 
 }
 
