@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html>
 
 <head>
 
-    <title>Merge PDF</title>
+    <title>PDF Merger</title>
 
     <link
         rel="stylesheet"
@@ -14,154 +15,42 @@
 
 <body>
 
-    <div class="navbar">
-
-        <h3>PDF Merger</h3>
-
-        <div>
-
-            <a href="/">
-
-                Home
-
-            </a>
-
-            <a href="/logout">
-
-                Logout
-
-            </a>
-
-        </div>
-
-    </div>
-
     <div class="container">
 
-        <div class="card">
+        <h1>Merge PDFs</h1>
 
-            <h1>Merge PDFs</h1>
+        <form
+            action="/merge"
+            method="POST"
+            enctype="multipart/form-data"
+        >
 
-            <form
-                action="/merge"
-                method="POST"
-                enctype="multipart/form-data"
+            <input
+                type="file"
+                name="pdfs"
+                multiple
+                required
             >
 
-                <input
-                    type="file"
-                    id="pdfInput"
-                    name="pdfs"
-                    accept=".pdf"
-                    multiple
-                    required
-                >
+            <br><br><br>
 
-                <div id="fileList"></div>
+            <button type="submit">
 
-                <button type="submit">
+                Merge PDFs
 
-                    Merge PDFs
+            </button>
 
-                </button>
+        </form>
 
-            </form>
+        <br><br>
 
-        </div>
+        <a href="/" class="home-btn">
+
+            Back to Home
+
+        </a>
 
     </div>
-
-    <script>
-
-        const input = document.getElementById("pdfInput");
-
-        const fileList = document.getElementById("fileList");
-
-        let selectedFiles = [];
-
-        input.addEventListener("change", function(event) {
-
-            const newFiles = Array.from(event.target.files);
-
-            selectedFiles = [...selectedFiles, ...newFiles];
-
-            renderFiles();
-
-        });
-
-        function renderFiles() {
-
-            fileList.innerHTML = "";
-
-            selectedFiles.forEach((file, index) => {
-
-                const fileItem = document.createElement("div");
-
-                fileItem.style.marginTop = "10px";
-
-                fileItem.style.display = "flex";
-
-                fileItem.style.justifyContent = "space-between";
-
-                fileItem.style.alignItems = "center";
-
-                fileItem.style.background = "#f1f1f1";
-
-                fileItem.style.padding = "10px";
-
-                fileItem.style.borderRadius = "8px";
-
-                const fileName = document.createElement("span");
-
-                fileName.textContent = file.name;
-
-                const removeBtn = document.createElement("span");
-
-                removeBtn.textContent = "×";
-
-                removeBtn.style.cursor = "pointer";
-
-               removeBtn.style.color = "black";
-
-                removeBtn.style.fontWeight = "normal";
-
-                removeBtn.style.fontSize = "16px";
-
-                removeBtn.onclick = () => {
-
-                    selectedFiles.splice(index, 1);
-
-                    renderFiles();
-
-                };
-
-                fileItem.appendChild(fileName);
-
-                fileItem.appendChild(removeBtn);
-
-                fileList.appendChild(fileItem);
-
-            });
-
-            updateFileInput();
-
-        }
-
-        function updateFileInput() {
-
-            const dataTransfer = new DataTransfer();
-
-            selectedFiles.forEach(file => {
-
-                dataTransfer.items.add(file);
-
-            });
-
-            input.files = dataTransfer.files;
-
-        }
-
-    </script>
 
 </body>
 
