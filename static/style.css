@@ -72,7 +72,9 @@ button {
 
     width: 220px;
 
-     align-items: center;
+    align-items: center;
+
+    box-sizing: border-box;
 
 }
 
