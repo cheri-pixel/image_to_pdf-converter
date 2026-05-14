@@ -1,66 +1,59 @@
 <!DOCTYPE html>
+
 <html>
 
 <head>
+
     <title>PDF Tools</title>
-     <link
+
+    <link
         rel="stylesheet"
         href="{{ url_for('static', filename='style.css') }}"
     >
+
 </head>
 
 <body>
 
-    <div class="navbar">
+    <div class="top-bar">
 
-        <h3>PDF Tools</h3>
+        <a href="/logout" class="logout-btn">
 
-        <div>
+            Logout
 
-            <a href="/logout">
-
-                Logout
-
-            </a>
-
-        </div>
+        </a>
 
     </div>
 
     <div class="container">
 
-        <div class="card">
+        <h1>Welcome to PDF Tools</h1>
 
-            <h1>Welcome to PDF Tools</h1>
+        <h2>Select a Tool</h2>
 
-            <h2>Select a Tool</h2>
+        <br>
 
-            <a href="/image-to-pdf">
+        <a href="/image-to-pdf">
 
-                <button>
+            <button>
 
-                    Image to PDF Converter
+                Image to PDF Converter
 
-                </button>
+            </button>
 
-            </a>
+        </a>
 
-            <a href="/merge-pdf">
+        <br><br>
 
-                <button>
+        <a href="/merge-pdf">
 
-                    PDF Merger
+            <button>
 
-                </button>
+                PDF Merger
 
-            </a>
-            <div class="top-bar">
-                <a href="/logout" class="logout-btn">
-                    Logout
-                </a>
-            </div>
+            </button>
 
-        </div>
+        </a>
 
     </div>
 
