@@ -93,6 +93,16 @@ button:hover {
 
     font-size: 18px;
 
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    width: 160px;  
+
+    box-sizing: border-box;
+
 }
 
 .container a {
